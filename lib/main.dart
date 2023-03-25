@@ -1,115 +1,274 @@
 import 'package:flutter/material.dart';
+import 'dbmanager.dart';
+import 'Student.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      home: const HomePage(),
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomePageState extends State<HomePage> {
+  Future<List<Student>>? Studentss;
+  TextEditingController controllerName = TextEditingController();
+  TextEditingController controllerApepa = TextEditingController();
+  TextEditingController controllerApema = TextEditingController();
+  TextEditingController controllerTel = TextEditingController();
+  TextEditingController controllerEmail = TextEditingController();
 
-  void _incrementCounter() {
+  String? name = '';
+  String? apepa = '';
+  String? apema = '';
+  String? tel = '';
+  String? email = '';
+  int? currentUserId;
+  final formKey = GlobalKey<FormState>();
+  late var dbHelper;
+  late bool isUpdating;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    dbHelper = dbManager();
+    isUpdating = false;
+    refreshList();
+  }
+
+  refreshList() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      Studentss = dbHelper.getStudents();
+      //Studentss = dbHelper.customQuery("JORGE.@.COM");
     });
+  }
+
+  clearData() {
+    controllerName.text = "";
+    controllerApepa.text = "";
+    controllerApema.text = "";
+    controllerTel.text = "";
+    controllerEmail.text = "";
+  }
+
+  validate() {
+    if (formKey.currentState!.validate()) {
+      formKey.currentState!.save();
+      if (isUpdating) {
+        Student stu = Student(currentUserId, name, apepa, apema, tel, email);
+        dbHelper.update(stu);
+        setState(() {
+          isUpdating = false;
+        });
+      } else {
+        Student stu = Student(null, name, apepa, apema, tel, email);
+        dbHelper.save(stu);
+      }
+      clearData();
+      refreshList();
+    }
+  }
+
+  Widget form() {
+    return Form(
+      key: formKey,
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          verticalDirection: VerticalDirection.down,
+          children: [
+            const SizedBox(
+              height: 10,
+            ),
+            TextFormField(
+              controller: controllerName,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: 'Nombre',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              validator: (val) => val!.isEmpty ? 'Ingrese un nombre' : null,
+              onSaved: (val) => name = val,
+            ),
+            TextFormField(
+              controller: controllerApepa,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: 'Apellido Paterno',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              validator: (val) => val!.isEmpty ? 'Ingrese Apellido' : null,
+              onSaved: (val) => apepa = val,
+            ),
+            TextFormField(
+              controller: controllerApema,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: 'Apellido Materno',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              validator: (val) => val!.isEmpty ? 'Ingrese Apellido' : null,
+              onSaved: (val) => apema = val,
+            ),
+            TextFormField(
+              controller: controllerTel,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: 'Teléfono',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              validator: (val) => val!.isEmpty ? 'Ingrese Teléfono' : null,
+              onSaved: (val) => tel = val,
+            ),
+            TextFormField(
+              controller: controllerEmail,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              validator: (val) => val!.isEmpty ? 'E-mail' : null,
+              onSaved: (val) => email = val,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                MaterialButton(
+                  onPressed: validate,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                  child: Text(isUpdating ? 'Actualizar' : 'Insertar'),
+                ),
+                MaterialButton(
+                  onPressed: () {
+                    setState(() {
+                      isUpdating = false;
+                    });
+                    clearData();
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                  child: const Text("Cancelar"),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  SingleChildScrollView dataTable(List<Student>? Studentss) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: const [
+          DataColumn(label: Text('Name')),
+          DataColumn(label: Text('Paterno')),
+          DataColumn(label: Text('Materno')),
+          DataColumn(label: Text('Tel')),
+          DataColumn(label: Text('Email')),
+          DataColumn(label: Text('Borrar')),
+        ],
+        rows: Studentss!
+            .map((mapStudent) => DataRow(cells: [
+          DataCell(Text(mapStudent.name!), onTap: () {
+            setState(() {
+              isUpdating = true;
+              currentUserId = mapStudent.controlNum;
+            });
+            controllerName.text = mapStudent.name!;
+            controllerApepa.text = mapStudent.apepa!;
+            controllerApema.text = mapStudent.apema!;
+            controllerTel.text = mapStudent.tel!;
+            controllerEmail.text = mapStudent.email!;
+          }),
+          DataCell(Text(mapStudent.apepa!)),
+          DataCell(Text(mapStudent.apema!)),
+          DataCell(Text(mapStudent.tel!)),
+          DataCell(Text(mapStudent.email!)),
+          DataCell(IconButton(
+            onPressed: () {
+              dbHelper.delete(mapStudent.controlNum);
+              refreshList();
+            },
+            icon: const Icon(Icons.delete),
+          ))
+        ]))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget list() {
+    return Expanded(
+        child: SingleChildScrollView(
+          child: FutureBuilder(
+              future: Studentss,
+              builder: (context, AsyncSnapshot<dynamic> snapshot) {
+                if (snapshot.hasData) {
+                  print(snapshot.data);
+                  return dataTable(snapshot.data);
+                }
+                if (snapshot.hasData == null) {
+                  print("Data not Found");
+                }
+                return const CircularProgressIndicator();
+              }),
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text("SQLite CRUD Operations"),
+        centerTitle: true,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: (Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        verticalDirection: VerticalDirection.down,
+        children: [
+
+          form(),
+          list(),
+        ],
+      )),
     );
   }
 }
